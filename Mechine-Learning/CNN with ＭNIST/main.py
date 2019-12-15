@@ -69,10 +69,10 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         if (i+1) % 100 == 0:
-            print('Epoch: [{}/{}], Step: [{}/{}], loss: []'
+            print('Epoch: [{}/{}], Step: [{}/{}], loss: {}'
                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
-model.evel()
+model.eval()
 with torch.no_grad():
     correct = 0
     total = 0
@@ -84,6 +84,6 @@ with torch.no_grad():
         correct += (Predictions == labels).sum().item()
         total += labels.size(0)
 
-    print('Test Accuracy of the model on the 10000 test images: {} %'.format(correct / total *100))
+    print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
 
-torch.save(model.state_dict(), 'model.ckpt')
+torch.save(model.state_dict(), 'cnn_with_mnist.ckpt')
