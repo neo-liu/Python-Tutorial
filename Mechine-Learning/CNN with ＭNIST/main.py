@@ -1,15 +1,19 @@
+# import tools.
 import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 
+# fixed operation to choose which device to use.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# define ultra-parameters.
 num_epochs = 5
 num_classes = 10
 batch_size = 100
 learning_rate = 0.001
 
+# set training and testing data set with some setting.
 train_dataset = torchvision.datasets.MNIST(root='./data',
                                            train=True,
                                            transform=transforms.ToTensor(),
@@ -25,9 +29,11 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False)
 
 
+# define convolutional class and processions inside of convolutional class.
 class ConvNet(nn.Module):
     def __init__(self, num_classes):
         super(ConvNet, self).__init__()
+        # redefine convolutional class combined with ultra-parameters.
         self.layer1 = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm2d(16),
@@ -40,6 +46,7 @@ class ConvNet(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
+        # construct fully-connected nerual network as usual to convert 2D signal into 1D signal.
         self.fc = nn.Linear(7*7*32, num_classes)
 
     def forward(self, x):
@@ -51,9 +58,11 @@ class ConvNet(nn.Module):
 model = ConvNet(num_classes).to(device)
 print(model)
 
+# define optimizer and loss function.
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+# training.
 total_step = len(train_loader)
 for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
@@ -72,6 +81,7 @@ for epoch in range(num_epochs):
             print('Epoch: [{}/{}], Step: [{}/{}], loss: {}'
                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
+# validation
 model.eval()
 with torch.no_grad():
     correct = 0
