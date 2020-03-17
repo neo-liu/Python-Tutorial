@@ -1,0 +1,92 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 定义存储列表
+T_matrix = list()
+data = list()
+boundary = list()
+Intensity_Vector = list()
+Reconstruction_Spectral_Vector = list()
+miu = list()
+
+with open('./data format.txt', 'r') as f:  # 读取格式文件
+    for line in f:
+        line = [float(i) for i in line.split(' ')]
+        boundary.append(line)
+boundary = np.array(boundary)
+XY_num_diff = int(boundary[1][0] - boundary[0][0])
+
+with open('../766.46.txt', 'r') as f:
+    for line in f:
+        line = [float(i) for i in line.split(' ')[1: -1]]
+        Intensity_Vector.append(line)
+Intensity_Vector1 = np.array(Intensity_Vector[1:])
+Intensity_Vector.clear()
+
+with open('../769.9.txt', 'r') as f:
+    for line in f:
+        line = [float(i) for i in line.split(' ')[1: -1]]
+        Intensity_Vector.append(line)
+Intensity_Vector2 = np.array(Intensity_Vector[1:])
+
+Intensity_Vector = (Intensity_Vector1 + Intensity_Vector2)[:,
+                   int(XY_num_diff/2):int(boundary[1][0] - XY_num_diff/2)].reshape(-1, 1)
+
+Probe_Intensity_Vector = np.array([766.46, 769.9])
+
+for i in range(0, 31):  # 读取所有数据
+    with open('./'+str(i)+'.txt', 'r') as f:
+        for line in f:
+            line = [float(i) for i in line.split(' ')[1: -1]]
+            data.append(line)
+
+    T_matrix.append(np.array(data)[1:])
+    T_matrix[i] = T_matrix[i][:, int(XY_num_diff/2):int(boundary[1][0] - XY_num_diff/2)]
+    data.clear()
+
+for i in range(len(T_matrix)):
+    T_matrix[i] = T_matrix[i].reshape(1, -1)   # / 255.0
+T_matrix = np.array(np.squeeze(T_matrix, axis=1)).T  # 格式数据
+
+k = 0
+# 求解最小的重建错误率
+for step in np.arange(0, 0.5, 0.01):
+    T_matrix_bak = T_matrix
+    # 将T_matrix中过小的元素进行截断
+    for num1, i in enumerate(T_matrix_bak):
+        for num2, j in enumerate(i):
+            if j <= step:
+                T_matrix_bak[num1][num2] = 0
+    # 求解Data的截断伪逆矩阵
+    T_matrix_inv = np.linalg.pinv(T_matrix_bak)
+    # 求解光谱矢量
+    Reconstruction_Spectral_Vector.append(np.array(T_matrix_inv.dot(Intensity_Vector)))
+    print(k); k += 1
+
+# 求解重建错误率
+for i in Reconstruction_Spectral_Vector:
+    miu.append(np.sqrt((np.power(Probe_Intensity_Vector, 2).sum() + np.power(i, 2)).sum()
+                        / len(Reconstruction_Spectral_Vector)) / Probe_Intensity_Vector.mean())
+
+# 绘制重建错误率曲线
+plt.figure(0)
+plt.plot(np.arange(0, 0.5, 0.01), miu)
+
+print('maximum value in μ is ', np.array(miu).max(),
+      '\nminimum value in μ is ', np.array(miu).min())
+
+# 计算重建错误率最低的截断光谱矢量索引
+index = miu.index(np.array(miu).min())
+
+Spectral = np.arange(0, 6.2, 0.2) + 765
+# 绘制点列图
+plt.figure(1)
+plt.stem(Spectral, Reconstruction_Spectral_Vector[index], use_line_collection=True, linefmt='r--', basefmt='b--')
+# plt.stem([1560.9], [1], use_line_collection=True, linefmt='y-', basefmt='b--', )
+for num, i in enumerate(Reconstruction_Spectral_Vector[index]):  # 标明光谱向量的值
+    i = round(i.tolist()[0], 2)
+    if Reconstruction_Spectral_Vector[index][num] >= 0.05:
+        plt.annotate(i, xy=(Spectral[num], i)
+                     , xytext=(Spectral[num]*1.02, i*1.02))
+plt.grid(); plt.xlabel('wavelength/nm', fontsize=15); plt.ylabel('Correlation', fontsize=15)
+plt.show()
