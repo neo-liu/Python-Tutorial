@@ -1,18 +1,17 @@
-'''
-author: Neo Liu
-data: 2020.4.9
-function: 处理光强分布，获取直接的Probe光谱
-'''
+# author: Neo Liu
+# data: 2020.4.9
+# function: 处理光强分布，获取直接的Probe光谱
 from tools import *
 
 # 定义超参数，用来控制整个程序的参数，可以根据不同情况灵活控制
 name1 = './data format.txt'
 name2 = './output_755.0.fld'  # 此为标定谱线的光强分布数据之一，用于读取数据维度使用
-start, end, step = 755.0, 780.0, 0.2  # 此为波长参数
+start, end, step = 755.0, 780.0+1e-5, 0.2  # 此为波长参数
+delta_lambda_start, delta_lambda_end, delta_lambda_step = 0.00, 0.05, 0.01
 
 # 波长（横）坐标， 以及平滑C时使用的波长（横）坐标
-Lambda = np.arange(0, end-start, step) + start
-Lambda_Smooth = np.linspace(Lambda.min(), Lambda.max(), 500)
+delta_lambda = np.arange(0, delta_lambda_end - delta_lambda_start, delta_lambda_step)
+Lambda_Smooth = np.linspace(min(delta_lambda), max(delta_lambda), 1000)
 
 # 读取光强分布的数据格式
 boundary = read_format(name1)
@@ -22,36 +21,33 @@ XY_num_diff = int(boundary[1] - boundary[0])
 shape = list(get_shape(name2))
 
 # read all data of Intensity distribution
-for num, i in enumerate(np.arange(start, end, step)):
-    Data = read_file('./output_' + str(round(i, 4)) + '.fld', shape, multi=True, num=num)
+for num, delta in enumerate(delta_lambda):
+    print('Loading data while Δ = ' + str(delta) + '\n # # # # # # # # # # \n')
+    for num1, i in enumerate(np.arange(start + delta, end + delta, step)):
+        data = read_file('./output_' + str(round(i, 2)) + '.fld', data, shape, multi=True, num=num1)
+    for j in data:
+        j = j[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)].reshape(1, -1)
+        Data.append(j[0])
 
-for num, i in enumerate(Data):
-    i = i[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)].reshape(1, -1)
-    Data[num] = i[0]
+    Data_set.append(np.expand_dims(Data, axis=0))
+    Data.clear()
+    data = np.array([])
+Data_set = np.squeeze(Data_set, axis=1)
 
-# base wavelength
-data = Data[0]
 
-# A_P_1 represent <I(λ，x)>
-# A_P_1 = data.mean()
-A_P_1 = data / Lambda[0]
-
-for num, i in enumerate(Data):
-    # P_A represent <I(λ，x)I(λ+Δλ，x)>
-    # P_A = (data * i).mean()
-    P_A = np.dot(data, i) / Lambda[num]
-
-    # A_P_2 represent <I(λ+Δλ，x)>
-    # A_P_2 = i.mean()
-    A_P_2 = i / Lambda[num]
-    # print(P_A, A_P_1, A_P_2)
-    # correlation equals <I(λ，x)I(λ+Δλ，x)>/[<I(λ，x)><I(λ+Δλ，x)>] - 1
-    Correlation.append((P_A / A_P_1 / A_P_2 - 1).mean())
-    # Correlation.append(np.corrcoef(data, i).tolist()[0][1])
-    print(P_A, A_P_1.shape, A_P_2.shape, Correlation[num])
+# calculate correlation
+for i in Data_set:
+    up = np.mean(np.multiply(Data_set[0], i), axis=0)
+    # print('up.shape:', up.shape)
+    down = np.multiply(np.mean(Data_set[0], axis=0), np.mean(i, axis=0))
+    # print('down.shape:', down.shape)
+    print(up, '\n###############')
+    print(down, '\n###############')
+    Correlation.append(np.mean((up / down), axis=0) - 1)
+    # print('Correlation.shape:', np.array(Correlation).shape)
 
 # smooth operation(cubic)
-Correlation_Smooth = interp1d(Lambda, Correlation, kind='cubic')
+Correlation_Smooth = interp1d(delta_lambda, np.array(Correlation), kind='quadratic')
 
 # svg display
 display.set_matplotlib_formats('svg')
@@ -65,12 +61,12 @@ for num, i in enumerate(Correlation_Smooth(Lambda_Smooth)):
     if i < (Correlation[0] / 2):
         plt.scatter(Lambda_Smooth[num], (Correlation[0] / 2),
                     color='red', marker='o', linewidths=3)
-        plt.scatter(Lambda_Smooth[2*num], Correlation_Smooth(Lambda_Smooth)[2*num],
-                    color='red', marker='o', linewidths=3)
+        # plt.scatter(Lambda_Smooth[2*num], Correlation_Smooth(Lambda_Smooth)[2*num],
+        #             color='red', marker='o', linewidths=3)
         # represent resolution
-        resolution = Lambda_Smooth[2*num] - Lambda_Smooth.min()
-        plt.axvline(Lambda_Smooth[2*num], 0, 0.15, linestyle='--')
-        plt.axhline(Correlation_Smooth(Lambda_Smooth)[2*num], 0, 0.06, linestyle='--')
+        # resolution = Lambda_Smooth[2*num] - min(Lambda_Smooth)
+        # plt.axvline(Lambda_Smooth[2*num], 0, 0.15, linestyle='--')
+        # plt.axhline(Correlation_Smooth(Lambda_Smooth)[2*num], 0, 0.06, linestyle='--')
 
         break
 
@@ -78,12 +74,11 @@ for num, i in enumerate(Correlation_Smooth(Lambda_Smooth)):
 for num, i in enumerate(Correlation):
     Correlation[num] = float(str(Correlation[num])[:4])
 
-for i in range(len(Lambda)):
-    plt.annotate(Correlation[i], xy=(Lambda[i], Correlation[i]),
-                                xytext=(Lambda[i] * 1.0001, Correlation[i]*1))
+for i in range(len(delta_lambda)):
+    plt.annotate(Correlation[i], xy=(delta_lambda[i], Correlation[i]), xytext=(delta_lambda[i] * 1.0001,
+                                                                               Correlation[i]*1))
 
 plt.grid(), plt.title('Resolution : ' + str(resolution)[0:4] + 'nm', fontsize=25)
-plt.xlabel('wavelength(nm)', fontsize=15), plt.ylabel('Spectral Correlation C(d lambda)',
-                                                                        fontsize=15)
+plt.xlabel('wavelength(nm)', fontsize=15), plt.ylabel('Spectral Correlation C(d lambda)', fontsize=15)
 
 plt.show()
