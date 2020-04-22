@@ -5,9 +5,9 @@ from tools import *
 
 # 定义超参数，用来控制整个程序的参数，可以根据不同情况灵活控制
 name1 = './data format.txt'  # 此为光强分布的数据格式
-name2 = './output_510.5.fld'  # 此为两个Probe谱线的光强分布数据
-name3 = './output_521.8.fld'
-start, end, step = 508.0, 523.0, 0.2  # 此为波长参数
+name2 = './output_766.46.fld'  # 此为两个Probe谱线的光强分布数据
+name3 = './output_769.9.fld'
+start, end, step = 755.0, 780.0, 0.2  # 此为波长参数
 sample_step = 30  # 此为光强分布的抽样间隔
 threshold = 0.01  # 此为重建精确光谱时使用的阈值，见61 line
 
@@ -23,7 +23,7 @@ else:
     raise Exception('数据维度不合理\n # # # # # # # # # #\n')
 
 # 读取name1, name2中的光强数据并抽样， 如果只使用一个数据则可以注释掉包含 *2 的部分
-Intensity_Vector1 = read_file(name2, shape, multi=False)
+Intensity_Vector1 = read_file(name2, Data=None, shape=shape, multi=False)
 # Intensity_Vector2 = read_file(name3, shape, multi=False)
 # Intensity_Vector = (Intensity_Vector1 + Intensity_Vector2)[:, int(
 #     XY_num_diff/2):int(boundary[1][0] - XY_num_diff/2)].reshape(-1, 1)[:: sample_step]
@@ -32,10 +32,10 @@ Intensity_Vector = Intensity_Vector1[:, int(XY_num_diff/2):int(
 
 # 读取标定光强数据并抽样
 for num, i in enumerate(np.arange(start, end, step)):
-    T_matrix = read_file('./output_' + str(round(i, 4)) + '.fld', shape, multi=True, num=num)
-for num, i in enumerate(T_matrix):
+    data = read_file('./output_' + str(round(i, 2)) + '.fld', data, shape=shape, multi=True, num=num)
+for num, i in enumerate(data):
     i = i[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)].reshape(1, -1)
-    T_matrix[num] = i[0, ::sample_step]
+    T_matrix.append(i[0, ::sample_step])
 
 # 计算传输矩阵的伪逆矩阵（包含了奇异值分解）
 T_matrix = np.array(T_matrix).T
@@ -56,9 +56,9 @@ Spectral_plot2 = list()
 # 还原Probe精确值，将’过分‘小的值抛除掉
 for num in range(len(Spectral_Vector1)):
     a, b = 0, 0
-    if num != 74:
+    if num != 124:
         a, b = Spectral_Vector1[num], Spectral_Vector1[num+1]
-    elif num == 74:
+    elif num == 124:
         print('光谱还原 完成 . . . \n # # # # # # # # # # \n')
     if a > threshold and b > threshold:  # 进行筛选，只有连续两个值均大于0.01才可继续执行
         # 将a, b值得关系近似为线性关系
