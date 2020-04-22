@@ -1,0 +1,41 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+from IPython import display
+
+fig = plt.figure(figsize=(7, 6), dpi=100, frameon=True)
+ax = Axes3D(fig)
+data = list()
+boundary = list()
+outline = list()
+
+with open('./data_format.txt', 'r') as f:
+    for line in f:
+        line = [float(i) for i in line.split(' ')]
+        boundary.append(line)
+
+boundary = np.array(boundary)
+X_slice_num, Y_slice_num = int(boundary[0][0]), int(boundary[1][0])
+X_Min, X_Max = boundary[0][1], boundary[0][2]
+Y_Min, Y_Max = boundary[1][1], boundary[1][2]
+
+with open('./output_bias_1.5501.txt', 'r') as f:
+    for line in f:
+        copy_line = line
+        # for light intensity
+        line = [float(i)**2 for i in line.split(' ')[1: -1]]
+        # for E's amplitude
+        # line = [float(i) for i in line.split(' ')[1: -1]]
+        data.append(line)
+
+data = np.array(data[1:])
+
+xx = np.linspace(X_Min, X_Max, X_slice_num)
+yy = np.linspace(Y_Min, Y_Max, Y_slice_num)
+
+X, Y = np.meshgrid(xx, yy)
+Z = data.T
+
+display.set_matplotlib_formats('svg')
+ax.plot_surface(X, Y, Z, cmap='rainbow', rstride=5, cstride=5)
+plt.show()
