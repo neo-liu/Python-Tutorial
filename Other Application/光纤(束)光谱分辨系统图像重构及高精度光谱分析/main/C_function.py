@@ -26,28 +26,23 @@ for num, delta in enumerate(delta_lambda):
     for num1, i in enumerate(np.arange(start + delta, end + delta, step)):
         data = read_file('./output_' + str(round(i, 2)) + '.fld', data, shape, multi=True, num=num1)
     for j in data:
-        j = j[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)].reshape(1, -1)
-        Data.append(j[0])
+        j = j[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)]
+        Data.append(j[1:-1, 1:-1].reshape(1, -1)[0])
 
     Data_set.append(np.expand_dims(Data, axis=0))
     Data.clear()
     data = np.array([])
 Data_set = np.squeeze(Data_set, axis=1)
 
-
 # calculate correlation
 for i in Data_set:
     up = np.mean(np.multiply(Data_set[0], i), axis=0)
-    # print('up.shape:', up.shape)
     down = np.multiply(np.mean(Data_set[0], axis=0), np.mean(i, axis=0))
-    # print('down.shape:', down.shape)
-    print(up, '\n###############')
-    print(down, '\n###############')
     Correlation.append(np.mean((up / down), axis=0) - 1)
-    # print('Correlation.shape:', np.array(Correlation).shape)
-
+for i in np.arange(len(Correlation)):
+    Correlation[i] = Correlation[i] / max(Correlation)
 # smooth operation(cubic)
-Correlation_Smooth = interp1d(delta_lambda, np.array(Correlation), kind='quadratic')
+Correlation_Smooth = interp1d(delta_lambda, np.array(Correlation), kind='cubic')  # quadratic
 
 # svg display
 display.set_matplotlib_formats('svg')
@@ -55,18 +50,18 @@ display.set_matplotlib_formats('svg')
 # setup figure and plot
 plt.figure(figsize=(7, 6))
 plt.plot(Lambda_Smooth, Correlation_Smooth(Lambda_Smooth), linewidth=2, color='green', linestyle='-')
-
+print(min(Correlation_Smooth(Lambda_Smooth)))
 # plot scatter and reference
 for num, i in enumerate(Correlation_Smooth(Lambda_Smooth)):
     if i < (Correlation[0] / 2):
         plt.scatter(Lambda_Smooth[num], (Correlation[0] / 2),
                     color='red', marker='o', linewidths=3)
-        # plt.scatter(Lambda_Smooth[2*num], Correlation_Smooth(Lambda_Smooth)[2*num],
-        #             color='red', marker='o', linewidths=3)
+        plt.scatter(Lambda_Smooth[2*num], Correlation_Smooth(Lambda_Smooth)[2*num],
+                    color='red', marker='o', linewidths=3)
         # represent resolution
-        # resolution = Lambda_Smooth[2*num] - min(Lambda_Smooth)
-        # plt.axvline(Lambda_Smooth[2*num], 0, 0.15, linestyle='--')
-        # plt.axhline(Correlation_Smooth(Lambda_Smooth)[2*num], 0, 0.06, linestyle='--')
+        resolution = Lambda_Smooth[2*num] - min(Lambda_Smooth)
+        plt.axvline(Lambda_Smooth[2*num], 0, 0.15, linestyle='--')
+        plt.axhline(Correlation_Smooth(Lambda_Smooth)[2*num], 0, 0.06, linestyle='--')
 
         break
 
