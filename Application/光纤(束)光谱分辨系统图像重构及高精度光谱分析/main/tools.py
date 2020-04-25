@@ -73,7 +73,7 @@ def read_file(name, Data=None, shape=None, multi=True, num=None):
         return data
     elif multi:
         data = np.expand_dims(data, axis=0)
-        if len(Data)==0:
+        if len(Data) == 0:
             Data = data
         else:
             Data = np.append(Data, data, axis=0)
