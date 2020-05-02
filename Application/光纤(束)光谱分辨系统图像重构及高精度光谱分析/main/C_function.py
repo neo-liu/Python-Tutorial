@@ -8,13 +8,13 @@ from tools import *  # 导入读取数据、计算需要使用到的函数包
 
 # 定义超参数，用来控制整个程序的参数，可以根据不同情况灵活控制
 name1 = './data format.txt'  # 此为数据格式文件
-name2 = './output_755.0.fld'  # 此为标定谱线的光强分布数据之一，用于读取数据维度使用. 若为铜原子则改为'./output_510.5.fld'
+name2 = './output_755.0.fld'  # 此为标定谱线的光强分布数据之一，用于读取数据维度使用
 
 # 此为波长覆盖参数（对应与数据表的横向维度），波长范围λ从755.0至780.0nm，波长间隔为0.2nm，共126组
-start, end, step = 755.0, 780.0+1e-4, 0.2  # 用于还原光谱。若为铜原子则改为508.0， 523.0，0.2
+start, end, step = 755.0, 780.0+1e-4, 0.2  # 用于还原光谱
 
 # 此为波长细微变化参数（对应于数据表的纵向维度），Δλ从0至0.05nm变化，间隔为0.01nm, 共6组
-delta_lambda_start, delta_lambda_end, delta_lambda_step = 0.00, 0.06, 0.01
+delta_lambda_start, delta_lambda_end, delta_lambda_step = 0.00, 0.08, 0.01
 
 ###################################################################################################
 # 读取数据
@@ -35,7 +35,7 @@ for num, delta in enumerate(delta_lambda):
     print('Loading data while Δ = ' + str(delta) + '\n # # # # # # # # # # \n')
     # 每个循环中都读取一个Δλ取值的数据
     for num1, i in enumerate(np.arange(start + delta, end + delta, step)):
-        data = read_file('./output_' + str(round(i, 2)) + '.fld', data, shape, multi=True, num=num1)
+        data = read_file('./output_' + str(round(i, 4)) + '.fld', data, shape, multi=True, num=num1)
     # 对数据做一些整形，展开的处理
     for j in data:
         j = j[:, int(XY_num_diff/2):int(boundary[1] - XY_num_diff/2)]  # 将数据整形成方形

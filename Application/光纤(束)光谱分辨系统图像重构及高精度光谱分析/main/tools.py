@@ -73,8 +73,14 @@ def read_file(name, Data=None, shape=None, multi=True, num=None):
         return data
     elif multi:
         data = np.expand_dims(data, axis=0)
-        if len(Data) == 0:
+        if len(Data)==0:
             Data = data
         else:
             Data = np.append(Data, data, axis=0)
         return Data
+
+
+def G(x1, x2, alpha=0.02):
+    """ Return Gaussian line shape at x with HWHM alpha """
+    return np.sqrt(np.log(2) / np.pi) / alpha\
+                             * np.exp(-((x1-x2) / alpha)**2 * np.log(2))
