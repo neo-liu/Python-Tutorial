@@ -5,9 +5,9 @@ from tools import *
 
 # 定义超参数，用来控制整个程序的参数，可以根据不同情况灵活控制
 name1 = './data format.txt'  # 此为光强分布的数据格式
-name2 = './output_766.46.fld'  # 此为两个Probe谱线的光强分布数据
-name3 = './output_769.9.fld'
-start, end, step = 755.01, 780.01, 0.2  # 此为波长参数
+name2 = './output_510.5.fld'  # 此为两个Probe谱线的光强分布数据
+name3 = './output_521.8.fld'
+start, end, step = 508.01, 523.01, 0.2  # 此为波长参数
 sample_step = 30  # 此为光强分布的抽样间隔
 threshold = 0.01  # 此为重建精确光谱时使用的阈值，见61 line
 
@@ -56,9 +56,9 @@ Spectral_plot2 = list()
 # 还原Probe精确值，将’过分‘小的值抛除掉
 for num in range(len(Spectral_Vector1)):
     a, b = 0, 0
-    if num != 124:
+    if num != 74:
         a, b = Spectral_Vector1[num], Spectral_Vector1[num+1]
-    elif num == 124:
+    elif num == 74:
         print('光谱还原 完成 . . . \n # # # # # # # # # # \n')
     if a > threshold and b > threshold:  # 进行筛选，只有连续两个值均大于0.01才可继续执行
         # 将a, b值得关系近似为线性关系
@@ -80,10 +80,15 @@ for num, i in enumerate(Spectral_Vector2):
     if Spectral_Vector2[num] >= 0.1:
         plt.annotate((j, i), xy=(Spectral_plot2[num], i),
                      xytext=(Spectral_plot2[num], i))
-    for num1, num2, num3 in zip(np.arange(start, end, step), Spectral_plot2, Spectral_Vector2):
-        x = np.linspace(num1-1.5*step, num1+1.5*step, 150)
-        y = G(x, num2)
-        plt.plot(x, y/max(y)*num3, color='r', ls='-')
+fun_values = list()
+x = np.linspace(start, end, 10000)
+for num1, num2 in zip(Spectral_plot2, Spectral_Vector2):
+    y = G(x, num1)
+    fun_values.append(y/max(y)*num2)
+y = 0
+for i in fun_values:
+    y += i
+plt.plot(x, y, color='r', ls='-')
 # 绘制完整还原光谱
 plt.figure(1)
 plt.stem(Spectral_plot1, Spectral_Vector1, use_line_collection=True, linefmt='--', basefmt='b--')
@@ -92,12 +97,17 @@ for num, i in enumerate(Spectral_Vector1):
     if Spectral_Vector1[num] >= 0.1:
         plt.annotate((Spectral_plot1[num], i), xy=(Spectral_plot1[num], i),
                      xytext=(Spectral_plot1[num], i))
-    for num1, num2, num3 in zip(np.arange(start, end, step), Spectral_plot1, Spectral_Vector1):
-        x = np.linspace(num1-step/2, num1+step/2, 50)
-        y = G(x, num2)
-        plt.plot(x, y/max(y)*num3, color='r', ls='-')
+fun_values = list()
+x = np.linspace(start, end, 10000)
+for num1, num2 in zip(Spectral_plot1, Spectral_Vector1):
+    y = G(x, num1)
+    fun_values.append(y/max(y)*num2)
+y = 0
+for i in fun_values:
+    y += i
+plt.plot(x, y, color='r', ls='-')
 plt.grid(), plt.xlabel('wavelength/nm', fontsize=15), plt.ylabel('Correlation', fontsize=15)
-plt.xlim(755.01, 780.01)
+plt.xlim(508.0, 523.0)
 plt.show()
 
 
