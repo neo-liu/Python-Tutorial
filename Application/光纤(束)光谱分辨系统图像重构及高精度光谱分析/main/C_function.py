@@ -4,9 +4,8 @@
 from tools import *  # 导入读取数据、计算需要使用到的函数包
 
 ###################################################################################################
-# 定义超参数
 
-# 定义超参数，用来控制整个程序的参数，可以根据不同情况灵活控制
+# 定义参数，用来控制整个程序的参数，可以根据不同情况灵活控制
 name1 = './data format.txt'  # 此为数据格式文件
 name2 = './output_755.0.fld'  # 此为标定谱线的光强分布数据之一，用于读取数据维度使用
 
@@ -65,11 +64,6 @@ for i in Data_set:
     down = np.multiply(np.mean(Data_set[0], axis=0), np.mean(i, axis=0))  # 计算I(λ，x)><I(λ+Δλ，x)>
     Correlation.append(np.mean((up / down), axis=0) - 1)  # 最后对x维度取均值，计算光谱相关度
 
-# 归一化过程，若不需要则可以注释掉
-# scale = Correlation[0]
-# for i in np.arange(len(Correlation)):
-#     Correlation[i] = Correlation[i] / scale
-
 # 使用插值的方式，将光谱相关度曲线拟合成为二阶、三阶或者更高阶曲线
 Correlation_Smooth = interp1d(delta_lambda, np.array(Correlation), kind='cubic')  # quadratic
 
@@ -95,7 +89,7 @@ for num, i in enumerate(Correlation_Smooth(Lambda_Smooth)):
         # plt.scatter(Lambda_Smooth[2*num], Correlation_Smooth(Lambda_Smooth)[2*num],
         #             color='red', marker='o', linewidths=3)
         # represent resolution
-        # resolution = Lambda_Smooth[2*num] - min(Lambda_Smooth)
+        resolution = 2*Lambda_Smooth[num] - min(Lambda_Smooth)
         # plt.axvline(Lambda_Smooth[2*num], 0, 0.15, linestyle='--')
         # plt.axhline(Correlation_Smooth(Lambda_Smooth)[2*num], 0, 0.06, linestyle='--')
 
